@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ortto SMS Cost Calculator</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0e0f13; --surface: #16181f; --surface2: #1e2029;
+    --border: #2a2d3a; --accent: #00e5a0; --accent2: #7c6ff7;
+    --text: #f0f1f5; --muted: #7a7e94; --warn: #ff8c42;
+  }
+  body { background: var(--bg); color: var(--text); font-family: 'Syne', sans-serif; min-height: 100vh; padding: 32px 20px; overflow-x: hidden; }
+  .bg-grid { position: fixed; inset: 0; pointer-events: none; z-index: 0; background-image: linear-gradient(rgba(0,229,160,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0,229,160,0.03) 1px, transparent 1px); background-size: 40px 40px; }
+  .container { max-width: 740px; margin: 0 auto; position: relative; z-index: 1; }
+
+  header { margin-bottom: 32px; }
+  .brand { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+  .logo-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 12px var(--accent); }
+  .brand-name { font-size: 12px; font-weight: 600; letter-spacing: 0.15em; color: var(--accent); text-transform: uppercase; }
+  h1 { font-size: clamp(26px, 5vw, 38px); font-weight: 800; line-height: 1.1; letter-spacing: -0.02em; }
+  h1 span { color: var(--accent); }
+
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 28px; margin-bottom: 16px; }
+  .card-title { font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin-bottom: 20px; display: flex; align-items: center; gap: 8px; }
+  .card-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+  .card-title-dynamic { color: var(--accent); }
+
+  .field { margin-bottom: 20px; }
+  .field:last-child { margin-bottom: 0; }
+  label { display: block; font-size: 13px; font-weight: 600; color: var(--muted); margin-bottom: 8px; letter-spacing: 0.02em; }
+  select, input[type="number"] { width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; color: var(--text); font-family: 'DM Mono', monospace; font-size: 15px; padding: 12px 16px; transition: border-color 0.2s; appearance: none; -webkit-appearance: none; outline: none; }
+  select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%237a7e94' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; padding-right: 40px; cursor: pointer; }
+  select:focus, input[type="number"]:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0,229,160,0.1); }
+  input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .seg-hint { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--muted); margin-top: 6px; display: flex; gap: 10px; flex-wrap: wrap; }
+  .seg-hint span { background: var(--surface2); padding: 3px 8px; border-radius: 4px; border: 1px solid var(--border); }
+
+  .monthly-hero { background: linear-gradient(135deg, #0d1a14 0%, #111320 100%); border: 1px solid rgba(0,229,160,0.2); border-radius: 16px; padding: 28px; margin-bottom: 16px; position: relative; overflow: hidden; }
+  .monthly-hero::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, transparent, var(--accent), transparent); }
+  .hero-label { font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin-bottom: 4px; }
+  .hero-amount { font-size: clamp(44px, 9vw, 68px); font-weight: 800; letter-spacing: -0.03em; color: var(--accent); line-height: 1; text-shadow: 0 0 40px rgba(0,229,160,0.3); margin-bottom: 4px; }
+  .hero-sub { font-size: 13px; color: var(--muted); margin-bottom: 24px; }
+
+  .breakdown-rows { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+  .brow { display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; gap: 12px; }
+  .brow-left { display: flex; align-items: center; gap: 10px; }
+  .brow-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .brow-name { font-size: 13px; color: var(--muted); font-weight: 600; }
+  .brow-detail { font-size: 11px; color: var(--muted); opacity: 0.6; font-family: 'DM Mono', monospace; }
+  .brow-val { font-family: 'DM Mono', monospace; font-size: 16px; font-weight: 500; color: var(--text); }
+
+  .stats-strip { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; }
+  .stat-box { background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: 10px; padding: 14px; }
+  .stat-val { font-family: 'DM Mono', monospace; font-size: 17px; font-weight: 500; color: var(--text); margin-bottom: 4px; }
+  .stat-val.c2 { color: var(--accent2); }
+  .stat-val.c3 { color: var(--warn); }
+  .stat-lbl { font-size: 11px; color: var(--muted); font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; }
+  .incl-note { font-size: 12px; color: var(--muted); background: rgba(124,111,247,0.08); border: 1px solid rgba(124,111,247,0.2); border-radius: 8px; padding: 10px 14px; margin-top: 16px; line-height: 1.5; }
+  .incl-note strong { color: var(--accent2); }
+
+  .scenario-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 13px; cursor: pointer; transition: color 0.15s; gap: 10px; }
+  .scenario-row:last-child { border-bottom: none; }
+  .scenario-row:hover .s-label { color: var(--accent); }
+  .s-label { color: var(--muted); flex: 1; }
+  .s-cost { font-family: 'DM Mono', monospace; color: var(--text); font-size: 14px; font-weight: 500; white-space: nowrap; }
+
+  @media (max-width: 520px) {
+    .row { grid-template-columns: 1fr; }
+    .stats-strip { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="bg-grid"></div>
+<div class="container">
+  <header>
+    <div class="brand"><div class="logo-dot"></div><span class="brand-name">Ortto</span></div>
+    <h1>SMS Cost<br><span>Calculator</span></h1>
+  </header>
+
+  <div class="card">
+    <div class="card-title">Campaign Settings</div>
+    <div class="row">
+      <div class="field">
+        <label>Country</label>
+        <select id="country"></select>
+      </div>
+      <div class="field">
+        <label>Phone Numbers (lines)</label>
+        <input type="number" id="lines" value="1" min="1">
+      </div>
+    </div>
+    <div class="row">
+      <div class="field">
+        <label>Recipients per Campaign</label>
+        <input type="number" id="recipients" value="500" min="1">
+      </div>
+      <div class="field">
+        <label>SMS Segments per Message</label>
+        <input type="number" id="segments" value="1" min="1" max="30">
+        <div class="seg-hint"><span>GSM-7: 160 / 153 chars</span><span>UCS-2: 70 / 67 chars</span></div>
+      </div>
+    </div>
+    <div class="row">
+      <div class="field">
+        <label>Campaigns per Month</label>
+        <input type="number" id="campaigns" value="1" min="1">
+      </div>
+      <div class="field">
+        <label>Expected Inbound Segments</label>
+        <input type="number" id="inbound" value="0" min="0">
+      </div>
+    </div>
+  </div>
+
+  <div class="monthly-hero">
+    <div class="hero-label">Estimated Monthly Total</div>
+    <div class="hero-amount" id="heroTotal">$0.00</div>
+    <div class="hero-sub">USD · all costs included</div>
+    <div class="breakdown-rows">
+      <div class="brow">
+        <div class="brow-left"><div class="brow-dot" style="background:#00e5a0"></div><div><div class="brow-name">Sending Cost</div><div class="brow-detail" id="sendDetail">—</div></div></div>
+        <div class="brow-val" id="sendCost">$0.00</div>
+      </div>
+      <div class="brow">
+        <div class="brow-left"><div class="brow-dot" style="background:#7c6ff7"></div><div><div class="brow-name">Inbound Cost</div><div class="brow-detail" id="recvDetail">—</div></div></div>
+        <div class="brow-val" id="recvCost">$0.00</div>
+      </div>
+      <div class="brow">
+        <div class="brow-left"><div class="brow-dot" style="background:#ff8c42"></div><div><div class="brow-name">Line Rental</div><div class="brow-detail" id="rentalDetail">—</div></div></div>
+        <div class="brow-val" id="rentalCost">$0.00</div>
+      </div>
+      <div class="brow" style="border-color:rgba(0,229,160,0.15)">
+        <div class="brow-left"><div class="brow-dot" style="background:#4af;opacity:0.5"></div><div><div class="brow-name">Included Credits</div><div class="brow-detail" id="inclDetail">—</div></div></div>
+        <div class="brow-val" style="color:var(--muted)" id="inclCost">−$0.00</div>
+      </div>
+    </div>
+    <div class="stats-strip">
+      <div class="stat-box"><div class="stat-val" id="totalSegs">0</div><div class="stat-lbl">Total Segments / mo</div></div>
+      <div class="stat-box"><div class="stat-val c2" id="totalCredits">0</div><div class="stat-lbl">Credits Needed</div></div>
+      <div class="stat-box"><div class="stat-val c3" id="cpm">$0.0000</div><div class="stat-lbl">Cost per Message</div></div>
+    </div>
+    <div class="incl-note" id="inclNote"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Quick Scenarios — <span class="card-title-dynamic" id="scenarioCountryLabel"></span> &nbsp;<span style="color:var(--accent);font-size:10px;font-weight:600">click to load</span></div>
+    <div id="scenarioList"></div>
+  </div>
+</div>
+
+<script>
+const COUNTRIES = [
+  { name:"Australia",       code:"AU", rental:15,  sendCost:56,  sendCred:7000,  recvCost:8,  recvCred:1000 },
+  { name:"Austria",         code:"AT", rental:15,  sendCost:112, sendCred:14000, recvCost:8,  recvCred:1000 },
+  { name:"Belgium",         code:"BE", rental:15,  sendCost:120, sendCred:15000, recvCost:8,  recvCred:1000 },
+  { name:"Canada",          code:"CA", rental:15,  sendCost:8,   sendCred:1000,  recvCost:8,  recvCred:1000 },
+  { name:"Czech Republic",  code:"CZ", rental:15,  sendCost:56,  sendCred:7000,  recvCost:8,  recvCred:1000 },
+  { name:"Denmark",         code:"DK", rental:15,  sendCost:32,  sendCred:4000,  recvCost:8,  recvCred:1000 },
+  { name:"Estonia",         code:"EE", rental:15,  sendCost:104, sendCred:13000, recvCost:8,  recvCred:1000 },
+  { name:"Finland",         code:"FI", rental:15,  sendCost:96,  sendCred:12000, recvCost:8,  recvCred:1000 },
+  { name:"France",          code:"FR", rental:15,  sendCost:88,  sendCred:11000, recvCost:8,  recvCred:1000 },
+  { name:"Germany",         code:"DE", rental:15,  sendCost:104, sendCred:3000,  recvCost:8,  recvCred:1000 },
+  { name:"Hungary",         code:"HU", rental:15,  sendCost:88,  sendCred:11000, recvCost:8,  recvCred:1000 },
+  { name:"Italy",           code:"IT", rental:15,  sendCost:104, sendCred:13000, recvCost:24, recvCred:3000 },
+  { name:"Lithuania",       code:"LT", rental:15,  sendCost:16,  sendCred:2000,  recvCost:8,  recvCred:1000 },
+  { name:"Mexico",          code:"MX", rental:15,  sendCost:56,  sendCred:7000,  recvCost:24, recvCred:3000 },
+  { name:"Netherlands",     code:"NL", rental:15,  sendCost:112, sendCred:14000, recvCost:8,  recvCred:1000 },
+  { name:"Poland",          code:"PL", rental:15,  sendCost:48,  sendCred:6000,  recvCost:8,  recvCred:1000 },
+  { name:"Portugal",        code:"PT", rental:15,  sendCost:56,  sendCred:7000,  recvCost:56, recvCred:7000 },
+  { name:"Sweden",          code:"SE", rental:15,  sendCost:64,  sendCred:8000,  recvCost:8,  recvCred:1000 },
+  { name:"United Kingdom",  code:"GB", rental:15,  sendCost:40,  sendCred:5000,  recvCost:8,  recvCred:1000 },
+  { name:"United States",   code:"US", rental:25,  sendCost:8,   sendCred:1000,  recvCost:8,  recvCred:1000 },
+  { name:"Philippines",     code:"PH", rental:128, sendCost:56,  sendCred:7000,  recvCost:8,  recvCred:1000 },
+];
+
+const SCENARIO_TEMPLATES = [
+  { label: "1-seg SMS · 500 recipients · 1 campaign",    lines:1, recipients:500,   segs:1, campaigns:1, inbound:0 },
+  { label: "2-seg SMS · 500 recipients · 1 campaign",    lines:1, recipients:500,   segs:2, campaigns:1, inbound:0 },
+  { label: "3-seg SMS · 500 recipients · 1 campaign",    lines:1, recipients:500,   segs:3, campaigns:1, inbound:0 },
+  { label: "1-seg SMS · 7,500 recipients · 1 campaign",  lines:1, recipients:7500,  segs:1, campaigns:1, inbound:0 },
+  { label: "2-seg SMS · 7,500 recipients · 1 campaign",  lines:1, recipients:7500,  segs:2, campaigns:1, inbound:0 },
+];
+
+const sel = document.getElementById('country');
+COUNTRIES.forEach((c, i) => {
+  const opt = document.createElement('option');
+  opt.value = i;
+  opt.textContent = `${c.name} (${c.code})`;
+  if (c.code === 'AU') opt.selected = true;
+  sel.appendChild(opt);
+});
+
+const fmt  = (n, d=2) => `$${n.toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d})}`;
+const fmtN = n => n.toLocaleString('en-US');
+
+function calcTotal(c, lines, recipients, segs, campaigns, inbound) {
+  const totalSendSegs = recipients * segs * campaigns;
+  const sendCostRaw   = (totalSendSegs / 1000) * c.sendCost;
+  const recvCostRaw   = (inbound / 1000) * c.recvCost;
+  const rentalRaw     = lines * c.rental;
+  const inclDeduction = Math.min(lines * 8, sendCostRaw + recvCostRaw);
+  return { total: rentalRaw + sendCostRaw + recvCostRaw - inclDeduction, sendCostRaw, recvCostRaw, rentalRaw, inclDeduction, totalSendSegs };
+}
+
+function renderScenarios() {
+  const c = COUNTRIES[parseInt(sel.value)];
+  document.getElementById('scenarioCountryLabel').textContent = c.name;
+  const list = document.getElementById('scenarioList');
+  list.innerHTML = '';
+  SCENARIO_TEMPLATES.forEach(s => {
+    const { total } = calcTotal(c, s.lines, s.recipients, s.segs, s.campaigns, s.inbound);
+    const row = document.createElement('div');
+    row.className = 'scenario-row';
+    row.innerHTML = `<span class="s-label">${s.label}</span><span class="s-cost">${fmt(total)}/mo</span>`;
+    row.addEventListener('click', () => {
+      document.getElementById('lines').value      = s.lines;
+      document.getElementById('recipients').value = s.recipients;
+      document.getElementById('segments').value   = s.segs;
+      document.getElementById('campaigns').value  = s.campaigns;
+      document.getElementById('inbound').value    = s.inbound;
+      calc();
+    });
+    list.appendChild(row);
+  });
+}
+
+function calc() {
+  const c         = COUNTRIES[parseInt(sel.value)];
+  const lines     = Math.max(1, parseInt(document.getElementById('lines').value)     || 1);
+  const recipients= Math.max(0, parseInt(document.getElementById('recipients').value)|| 0);
+  const segs      = Math.max(1, parseInt(document.getElementById('segments').value)  || 1);
+  const campaigns = Math.max(1, parseInt(document.getElementById('campaigns').value) || 1);
+  const inbound   = Math.max(0, parseInt(document.getElementById('inbound').value)   || 0);
+
+  const { total, sendCostRaw, recvCostRaw, rentalRaw, inclDeduction, totalSendSegs } =
+    calcTotal(c, lines, recipients, segs, campaigns, inbound);
+
+  const sendCredits  = (totalSendSegs / 1000) * c.sendCred;
+  const recvCredits  = (inbound / 1000) * c.recvCred;
+  const totalCredits = Math.ceil(sendCredits + recvCredits);
+  const cpmVal       = recipients > 0 ? (sendCostRaw / campaigns / recipients) : 0;
+
+  document.getElementById('heroTotal').textContent    = fmt(total);
+  document.getElementById('sendCost').textContent     = fmt(sendCostRaw);
+  document.getElementById('recvCost').textContent     = fmt(recvCostRaw);
+  document.getElementById('rentalCost').textContent   = fmt(rentalRaw);
+  document.getElementById('inclCost').textContent     = `−${fmt(inclDeduction)}`;
+  document.getElementById('sendDetail').textContent   = `${fmtN(totalSendSegs)} segs × ${fmt(c.sendCost)}/1k`;
+  document.getElementById('recvDetail').textContent   = inbound > 0 ? `${fmtN(inbound)} segs × ${fmt(c.recvCost)}/1k` : 'No inbound segments';
+  document.getElementById('rentalDetail').textContent = `${lines} line${lines>1?'s':''} × ${fmt(c.rental)}/mo`;
+  document.getElementById('inclDetail').textContent   = `${lines} line${lines>1?'s':''} × 1,000 credits ($8 value each)`;
+  document.getElementById('totalSegs').textContent    = fmtN(totalSendSegs);
+  document.getElementById('totalCredits').textContent = fmtN(totalCredits);
+  document.getElementById('cpm').textContent          = fmt(cpmVal, 4);
+  document.getElementById('inclNote').innerHTML       =
+    `<strong>Included credits:</strong> Each phone number add-on includes 1,000 SMS credits ($8 value) per month. ` +
+    `Your ${lines} line${lines>1?'s':''} include <strong>${fmtN(lines*1000)} credits</strong> worth ` +
+    `<strong>${fmt(lines*8)}</strong>, deducted from your usage cost.`;
+
+  renderScenarios();
+}
+
+['country','lines','recipients','segments','campaigns','inbound'].forEach(id => {
+  document.getElementById(id).addEventListener('input', calc);
+  document.getElementById(id).addEventListener('change', calc);
+});
+
+calc();
+</script>
+</body>
+</html>
