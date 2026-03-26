@@ -186,11 +186,19 @@ const fmtN = n => n.toLocaleString('en-US');
 
 function calcTotal(c, lines, recipients, segs, campaigns, inbound) {
   const totalSendSegs = recipients * segs * campaigns;
-  const sendCostRaw   = (totalSendSegs / 1000) * c.sendCost;
-  const recvCostRaw   = (inbound / 1000) * c.recvCost;
+
+  // Credits are billed in blocks of 1,000 — round up to nearest block
+  const rawSendCredits      = totalSendSegs * (c.sendCred / 1000);
+  const billableSendCredits = Math.ceil(rawSendCredits / 1000) * 1000;
+  const sendCostRaw         = billableSendCredits * (c.sendCost / c.sendCred);
+
+  const rawRecvCredits      = inbound * (c.recvCred / 1000);
+  const billableRecvCredits = inbound > 0 ? Math.ceil(rawRecvCredits / 1000) * 1000 : 0;
+  const recvCostRaw         = billableRecvCredits * (c.recvCost / c.recvCred);
+
   const rentalRaw     = lines * c.rental;
   const inclDeduction = Math.min(lines * 8, sendCostRaw + recvCostRaw);
-  return { total: rentalRaw + sendCostRaw + recvCostRaw - inclDeduction, sendCostRaw, recvCostRaw, rentalRaw, inclDeduction, totalSendSegs };
+  return { total: rentalRaw + sendCostRaw + recvCostRaw - inclDeduction, sendCostRaw, recvCostRaw, rentalRaw, inclDeduction, totalSendSegs, billableSendCredits };
 }
 
 function renderScenarios() {
@@ -223,25 +231,24 @@ function calc() {
   const campaigns = Math.max(1, parseInt(document.getElementById('campaigns').value) || 1);
   const inbound   = Math.max(0, parseInt(document.getElementById('inbound').value)   || 0);
 
-  const { total, sendCostRaw, recvCostRaw, rentalRaw, inclDeduction, totalSendSegs } =
+  const { total, sendCostRaw, recvCostRaw, rentalRaw, inclDeduction, totalSendSegs, billableSendCredits } =
     calcTotal(c, lines, recipients, segs, campaigns, inbound);
 
-  const sendCredits  = (totalSendSegs / 1000) * c.sendCred;
-  const recvCredits  = (inbound / 1000) * c.recvCred;
-  const totalCredits = Math.ceil(sendCredits + recvCredits);
-  const cpmVal       = recipients > 0 ? (sendCostRaw / campaigns / recipients) : 0;
+  const rawSendCredits   = totalSendSegs * (c.sendCred / 1000);
+  const sendBlocks       = totalSendSegs > 0 ? Math.ceil(rawSendCredits / 1000) : 0;
+  const cpmVal           = recipients > 0 ? (sendCostRaw / campaigns / recipients) : 0;
 
   document.getElementById('heroTotal').textContent    = fmt(total);
   document.getElementById('sendCost').textContent     = fmt(sendCostRaw);
   document.getElementById('recvCost').textContent     = fmt(recvCostRaw);
   document.getElementById('rentalCost').textContent   = fmt(rentalRaw);
   document.getElementById('inclCost').textContent     = `−${fmt(inclDeduction)}`;
-  document.getElementById('sendDetail').textContent   = `${fmtN(totalSendSegs)} segs × ${fmt(c.sendCost)}/1k`;
+  document.getElementById('sendDetail').textContent   = `${fmtN(totalSendSegs)} segs → ${fmtN(billableSendCredits)} credits (${fmtN(sendBlocks)} block${sendBlocks!==1?'s':''})`;
   document.getElementById('recvDetail').textContent   = inbound > 0 ? `${fmtN(inbound)} segs × ${fmt(c.recvCost)}/1k` : 'No inbound segments';
   document.getElementById('rentalDetail').textContent = `${lines} line${lines>1?'s':''} × ${fmt(c.rental)}/mo`;
   document.getElementById('inclDetail').textContent   = `${lines} line${lines>1?'s':''} × 1,000 credits ($8 value each)`;
   document.getElementById('totalSegs').textContent    = fmtN(totalSendSegs);
-  document.getElementById('totalCredits').textContent = fmtN(totalCredits);
+  document.getElementById('totalCredits').textContent = fmtN(billableSendCredits);
   document.getElementById('cpm').textContent          = fmt(cpmVal, 4);
 
   renderScenarios();
