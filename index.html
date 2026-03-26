@@ -167,23 +167,15 @@
 <div class="tooltip-overlay" id="segTooltip" onclick="if(event.target===this)this.classList.remove('open')">
   <div class="tooltip-box">
     <button class="tooltip-close" onclick="document.getElementById('segTooltip').classList.remove('open')">×</button>
-    <div class="tooltip-title">What is an SMS segment?</div>
+    <div class="tooltip-title">How SMS messages are charged</div>
     <div class="tooltip-body">
-      <p>SMS messages are broken into <strong>segments</strong> — the individual packets a carrier transmits. A short message fits in one segment; longer messages are split into multiple segments, each billed separately.</p>
-      <p>The number of characters per segment depends on the <strong>encoding</strong> used:</p>
-      <table class="seg-table">
-        <thead>
-          <tr><th>Encoding</th><th>Used for</th><th>1 segment</th><th>2+ segments (each)</th></tr>
-        </thead>
-        <tbody>
-          <tr><td><span class="tag">GSM-7</span></td><td>Standard Latin characters</td><td>160 chars</td><td>153 chars</td></tr>
-          <tr><td><span class="tag tag2">UCS-2</span></td><td>Emoji, accented &amp; non-Latin characters</td><td>70 chars</td><td>67 chars</td></tr>
-        </tbody>
-      </table>
-      <p>The per-segment limit is <strong>lower for multi-part messages</strong> because a small header is added to each segment so the recipient's phone can reassemble them in order.</p>
-      <p>Including a single emoji in your message switches the entire message to UCS-2, significantly reducing the characters per segment.</p>
+      <p>For pricing purposes, a single SMS message consists of one or more SMS segments, where each SMS segment contains up to:</p>
+      <ul style="margin: 0 0 16px 18px; display:flex; flex-direction:column; gap:6px;">
+        <li><strong>157</strong> standard encoded (GSM-7) characters only, or</li>
+        <li><strong>67</strong> universal coded character set (UCS-2) characters (supporting non-European characters, emojis, etc.)</li>
+      </ul>
 
-      <p style="font-size:12px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;">Examples</p>
+      <p style="font-size:12px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;margin-top:4px;">Examples</p>
       <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:16px;">
         <div>
           <div style="font-size:11px;color:var(--accent);font-weight:600;margin-bottom:6px;font-family:'DM Mono',monospace;">2-SEGMENT MESSAGE</div>
@@ -199,9 +191,6 @@
         </div>
       </div>
 
-      <div class="tooltip-tip">
-        <strong>Tip:</strong> Count your message characters carefully. A 161-character GSM-7 message = 2 segments. Adding one emoji to a 70-character message = 2 segments. Both double your sending cost.
-      </div>
     </div>
   </div>
 </div>
