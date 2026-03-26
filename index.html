@@ -68,6 +68,28 @@
   .s-label { color: var(--muted); flex: 1; }
   .s-cost { font-family: 'DM Mono', monospace; color: var(--text); font-size: 14px; font-weight: 500; white-space: nowrap; }
 
+  .label-row { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
+  .label-row label { margin-bottom: 0; }
+  .info-btn { width: 16px; height: 16px; border-radius: 50%; border: 1.5px solid var(--muted); background: none; color: var(--muted); font-size: 10px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0; line-height: 1; flex-shrink: 0; transition: border-color 0.2s, color 0.2s; font-family: 'Plus Jakarta Sans', sans-serif; }
+  .info-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  .tooltip-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 100; align-items: center; justify-content: center; padding: 20px; }
+  .tooltip-overlay.open { display: flex; }
+  .tooltip-box { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 28px; max-width: 460px; width: 100%; position: relative; max-height: 80vh; overflow-y: auto; }
+  .tooltip-close { position: absolute; top: 16px; right: 16px; background: var(--surface2); border: 1px solid var(--border); color: var(--muted); border-radius: 6px; width: 28px; height: 28px; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; }
+  .tooltip-close:hover { color: var(--text); }
+  .tooltip-title { font-size: 16px; font-weight: 700; margin-bottom: 12px; }
+  .tooltip-body { font-size: 13px; color: var(--muted); line-height: 1.7; }
+  .tooltip-body p { margin-bottom: 12px; }
+  .tooltip-body strong { color: var(--text); }
+  .seg-table { width: 100%; border-collapse: collapse; margin: 16px 0; font-family: 'DM Mono', monospace; font-size: 12px; }
+  .seg-table th { text-align: left; padding: 8px 12px; font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); border-bottom: 1px solid var(--border); font-family: 'Plus Jakarta Sans', sans-serif; }
+  .seg-table td { padding: 10px 12px; border-bottom: 1px solid rgba(255,255,255,0.04); color: var(--text); }
+  .seg-table tr:last-child td { border-bottom: none; }
+  .seg-table .tag { display: inline-block; background: rgba(79,142,247,0.12); border: 1px solid rgba(79,142,247,0.25); color: var(--accent); border-radius: 4px; padding: 2px 7px; font-size: 11px; }
+  .seg-table .tag2 { background: rgba(124,111,247,0.12); border-color: rgba(124,111,247,0.25); color: var(--accent2); }
+  .tooltip-tip { background: rgba(79,142,247,0.08); border: 1px solid rgba(79,142,247,0.2); border-radius: 8px; padding: 10px 14px; font-size: 12px; color: var(--muted); line-height: 1.5; margin-top: 4px; }
+
   @media (max-width: 520px) {
     .row { grid-template-columns: 1fr; }
     .stats-strip { grid-template-columns: 1fr 1fr; }
@@ -91,7 +113,10 @@
     <div class="row">
       <div class="field"><label>Recipients per Campaign</label><input type="number" id="recipients" value="500" min="1"></div>
       <div class="field">
-        <label>SMS Segments per Message</label>
+        <div class="label-row">
+          <label>SMS Segments per Message</label>
+          <button class="info-btn" onclick="document.getElementById('segTooltip').classList.add('open')" title="What is a segment?">i</button>
+        </div>
         <input type="number" id="segments" value="1" min="1" max="30">
         <div class="seg-hint"><span>GSM-7: 160 / 153 chars</span><span>UCS-2: 70 / 67 chars</span></div>
       </div>
@@ -135,6 +160,32 @@
   <div class="card">
     <div class="card-title">Quick Scenarios — <span class="card-title-dynamic" id="scenarioCountryLabel"></span> &nbsp;<span style="color:var(--accent);font-size:10px;font-weight:600">click to load</span></div>
     <div id="scenarioList"></div>
+  </div>
+</div>
+
+<!-- Segment tooltip modal -->
+<div class="tooltip-overlay" id="segTooltip" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="tooltip-box">
+    <button class="tooltip-close" onclick="document.getElementById('segTooltip').classList.remove('open')">×</button>
+    <div class="tooltip-title">What is an SMS segment?</div>
+    <div class="tooltip-body">
+      <p>SMS messages are broken into <strong>segments</strong> — the individual packets a carrier transmits. A short message fits in one segment; longer messages are split into multiple segments, each billed separately.</p>
+      <p>The number of characters per segment depends on the <strong>encoding</strong> used:</p>
+      <table class="seg-table">
+        <thead>
+          <tr><th>Encoding</th><th>Used for</th><th>1 segment</th><th>2+ segments (each)</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><span class="tag">GSM-7</span></td><td>Standard Latin characters</td><td>160 chars</td><td>153 chars</td></tr>
+          <tr><td><span class="tag tag2">UCS-2</span></td><td>Emoji, accented &amp; non-Latin characters</td><td>70 chars</td><td>67 chars</td></tr>
+        </tbody>
+      </table>
+      <p>The per-segment limit is <strong>lower for multi-part messages</strong> because a small header is added to each segment so the recipient's phone can reassemble them in order.</p>
+      <p>Including a single emoji in your message switches the entire message to UCS-2, significantly reducing the characters per segment.</p>
+      <div class="tooltip-tip">
+        <strong>Tip:</strong> Count your message characters carefully. A 161-character GSM-7 message = 2 segments. Adding one emoji to a 70-character message = 2 segments. Both double your sending cost.
+      </div>
+    </div>
   </div>
 </div>
 
